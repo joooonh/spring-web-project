@@ -1,5 +1,6 @@
 package com.sample;
 
+import com.config.RootConfig;
 import lombok.Setter;
 import lombok.extern.log4j.Log4j;
 import org.junit.Test;
@@ -13,7 +14,7 @@ import static org.junit.Assert.assertNotNull;
 
 @WebAppConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)     // 이 테스트 코드가 스프링 실행할 거다 -> @Autowired에 해당하는 것만 로딩
-@ContextConfiguration("file:src/main/webapp/WEB-INF/applicationContext.xml")  // 스프링 빈으로 등록
+@ContextConfiguration(classes = {RootConfig.class})  // 스프링 빈으로 등록
 @Log4j
 public class SampleTest {
 
