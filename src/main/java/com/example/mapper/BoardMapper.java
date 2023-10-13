@@ -1,12 +1,17 @@
 package com.example.mapper;
 
 import com.example.domain.BoardVO;
+import com.example.domain.Criteria;
 
 import java.util.List;
 
 public interface BoardMapper {
 
     public List<BoardVO> getList();
+
+    public List<BoardVO> getListWithPaging(Criteria criteria);
+
+    public int getTotalCount(Criteria cri);
 
     public void insert(BoardVO boardVO);
 

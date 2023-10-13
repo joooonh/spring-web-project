@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.domain.BoardVO;
+import com.example.domain.Criteria;
 import com.example.mapper.BoardMapper;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
@@ -46,9 +47,14 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public List<BoardVO> getList() {
-        log.info("getList.....");
+    public List<BoardVO> getList(Criteria cri) {
+        log.info("get List with criteria: " + cri);
 
-        return mapper.getList();
+        return mapper.getListWithPaging(cri);
+    }
+
+    @Override
+    public int getTotal(Criteria cri) {
+        return mapper.getTotalCount(cri);
     }
 }

@@ -31,6 +31,14 @@ public class BoardControllerTests {
     }
 
     @Test
+    public void testListPaging() throws Exception {
+        log.info(mockMvc.perform(
+                MockMvcRequestBuilders.get("/board/list")
+                        .param("pageNum", "2")
+                        .param("amount", "50"))
+                .andReturn().getModelAndView().getModelMap());
+    }
+    @Test
     public void testList() throws Exception {
         // 가짜 url, 파라미터 등을 브라우저에서 사용하는 것처럼 만듦
         // get 방식의 호출 -> 반환 결과를 이용해서 model에 어떤 데이터가 담겨 있는지 확인
