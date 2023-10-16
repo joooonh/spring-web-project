@@ -3,11 +3,13 @@ package com.example.controller;
 import com.example.domain.AttachFileDTO;
 import lombok.extern.log4j.Log4j;
 import net.coobird.thumbnailator.Thumbnailator;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -158,8 +160,27 @@ public class UploadController {
         return new ResponseEntity<>(list, HttpStatus.OK);
     }
 
+    // 섬네일 이미지 보여주기
+    // 문자열로 파일 경로가 포함된 fileName을 파라미터로 받고, byte[] 전송
+    @GetMapping("/display")
+    @ResponseBody
+    public ResponseEntity<byte[]> getFile(String fileName) {
+        log.info("fileName: " + fileName);
 
+        File file = new File("/Users/joooonh/Documents/upload/" + fileName);
+        log.info("file: " + file);
 
+        ResponseEntity<byte[]> result = null;
 
+        try {
+            HttpHeaders header = new HttpHeaders();
+            // 적절한 MIME 타입 데이터를 Http 헤더 메시지에 포함
+            header.add("Content-Type", Files.probeContentType(file.toPath()));
+            result = new ResponseEntity<>(FileCopyUtils.copyToByteArray(file), header, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 
 }
