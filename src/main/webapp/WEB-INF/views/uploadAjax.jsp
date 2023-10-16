@@ -21,6 +21,25 @@
 <script>
 $(document).ready(function() {
 
+  // 파일 확장자와 크기 처리 이벤트
+  var regex = new RegExp("(.*?)\.(exe|sh|zip|alx)$");   // 파일 확장자 검사 정규식
+  var maxSize = 5242880;    // 5MB
+
+  function checkExtension(fileName, fileSize) {
+
+    if (fileSize >= maxSize) {
+      alert("파일 사이즈 초과");
+      return false;
+    }
+
+    if (regex.test(fileName)) {
+      alert("해당 종류의 파일은 업로드할 수 없습니다.");
+      return false;
+    }
+    return true;
+  }
+
+  // 파일 업로드 버튼 클릭 이벤트
   $("#uploadBtn").on("click", function (e) {
 
     // jQuery를 이용하는 경우 파일 업로드 객체 (= 가상의 <form> 태그)
@@ -34,22 +53,33 @@ $(document).ready(function() {
 
     // FormData 객체에 각 파일 데이터 추가
     for (var i = 0; i < files.length; i++) {
+
+      // 파일 확장자와 크기 검사
+      if (!checkExtension(files[i].name, files[i].size)) {
+        return false;
+      }
+
       formData.append("uploadFile", files[i]);
+
     }
+
     // ajax를 통해서 formData 객체 전송
     $.ajax({
       url : '/uploadAjaxAction',
       processData : false,      // 반드시 false
       contentType : false,      // 반드시 false
       data : formData,
-      type : 'POST',
-      success: function (result) {
-        alert("Uploaded");
-      },
+        type : 'POST',
+        dataType : 'json',
+        success: function (result) {
+          console.log(result);
+        }
     })
 
   });
-})
+
+
+});
 
 </script>
 

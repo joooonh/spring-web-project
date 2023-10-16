@@ -124,7 +124,7 @@
             <version>19.3.0.0</version>
         </dependency>
 
-        <!-- json/xml 관련 -->
+        <!-- json/xml 데이터 처리 관련 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -155,6 +155,14 @@
             <artifactId>aspectjrt</artifactId>
             <version>${org.aspectj-version}</version>
         </dependency>
+
+        <!-- 이미지 섬네일 라이브러리 -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.8</version>
+        </dependency>
+
 
     </dependencies>
 
