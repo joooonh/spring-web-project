@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.domain.Criteria;
 import com.example.domain.ReplyPageDto;
 import com.example.domain.ReplyVO;
+import com.example.service.ReplyService;
 import com.example.service.ReplyServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j;
@@ -11,15 +12,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RequestMapping("/replies/")
 @RestController
 @Log4j
 @AllArgsConstructor
 public class ReplyController {
 
-    private ReplyServiceImpl service;
+    private ReplyService service;
 
     // 댓글 등록 - post 방식으로만 동작, json 데이터만 받음(consumes), 문자열 반환(produces) - "success"
     // @RequestBody - json 데이터를 ReplyVO 타입으로 변환
