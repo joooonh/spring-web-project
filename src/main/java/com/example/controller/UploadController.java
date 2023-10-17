@@ -3,6 +3,8 @@ package com.example.controller;
 import com.example.domain.AttachFileDTO;
 import lombok.extern.log4j.Log4j;
 import net.coobird.thumbnailator.Thumbnailator;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,12 +14,17 @@ import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -88,7 +95,6 @@ public class UploadController {
     // Ajax를 이용하는 파일 업로드 - 페이지 이동
     @GetMapping("/uploadAjax")
     public void uploadAjax() {
-        log.info("upload ajax");
     }
 
     // Ajax를 이용하는 파일 업로드 - 업로드되는 파일 저장
@@ -181,6 +187,80 @@ public class UploadController {
             e.printStackTrace();
         }
         return result;
+    }
+
+    // 첨부파일 다운로드 (다운로드 할 수 있는 MIME 타입 - application/octet-stream)
+    @GetMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<Resource> downloadFile(@RequestHeader("User-Agent") String userAgent, String fileName) {
+
+        Resource resource = new FileSystemResource("/Users/joooonh/Documents/upload/" + fileName);
+
+        if (resource.exists() == false) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        String resourceName = resource.getFilename();
+
+        // UUID 제거 (예: UUID_파일명.jpg -> 파일명.jpg)
+        String resourceOriginalName = resourceName.substring(resourceName.indexOf("_") + 1);
+
+        HttpHeaders headers = new HttpHeaders();
+
+        try {
+
+            String downloadName = null;
+
+            if (userAgent.contains("Trident")) {
+                log.info("IE browser");
+                downloadName = URLEncoder.encode(resourceOriginalName, "UTF-8").replaceAll("\\+", " ");
+            } else if (userAgent.contains("Edge")) {
+                log.info("Edge browser");
+                downloadName = URLEncoder.encode(resourceOriginalName, "UTF-8");
+            } else {
+                log.info("Chrome browser"); // safari
+                // chrome : new String(resourceOriginalName.getBytes("UTF_8"), "ISO_8859_1");
+                downloadName = new String(resourceOriginalName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+            }
+
+            log.info("downloadName: " + downloadName);
+
+            // 다운로드 시 저장되는 이름 지정 (Content-Disposition)
+            headers.add("Content-Disposition", "attachment; filename=" + downloadName);
+
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
+    }
+
+    @PostMapping("/deleteFile")
+    @ResponseBody
+    public ResponseEntity<String> deleteFile(String fileName, String type) {
+        log.info("deleteFile: " + fileName);
+
+        File file;
+
+        try {
+            // 파일 이름을 디코딩하여 원래의 파일 이름 얻기
+            // 자바스크립트에서 인코딩(%B8%EC%A7%80.jpg) -> 자바에서 디코딩(파일이름.jpg)
+            file = new File("/Users/joooonh/Documents/upload/" + URLDecoder.decode(fileName, "UTF-8"));
+
+            // 일반 파일인 경우 파일만 삭제
+            file.delete();
+
+            // 이미지 파일인 경우 섬네일 파일의 's_'를 지우고, 원본 파일과 함께 삭제되도록 처리
+            if (type.equals("image")) {
+                String largeFileName = file.getAbsolutePath().replace("s_", "");
+                log.info("largeFileName: " + largeFileName);
+                file = new File(largeFileName);
+                file.delete();
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<String>("deleted", HttpStatus.OK);
     }
 
 }
