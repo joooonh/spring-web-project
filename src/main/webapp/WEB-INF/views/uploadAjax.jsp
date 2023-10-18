@@ -9,7 +9,6 @@
 <body>
 <div class="bigPictureWrapper">
     <div class="bigPicture">
-
     </div>
 </div>
 <style>

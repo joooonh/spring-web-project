@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.domain.BoardAttachVO;
 import com.example.domain.BoardVO;
 import com.example.domain.Criteria;
 
@@ -18,4 +19,6 @@ public interface BoardService {
     public List<BoardVO> getList(Criteria criteria);
 
     public int getTotal(Criteria cri);
+
+    public List<BoardAttachVO> getAttachList(Long bno);
 }
