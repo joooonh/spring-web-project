@@ -35,11 +35,21 @@ public class BoardController {
 
     @PostMapping("/register")
     public String register(BoardVO board, RedirectAttributes rttr) {
+
+        log.info("=======================");
         log.info("register: " + board);
+
+        if (board.getAttachList() != null) {
+            board.getAttachList().forEach(attach -> log.info("attach: " + attach));
+        }
+
+        log.info("========================");
+
         service.register(board);
 
         // 등록 작업 후 다시 목록 화면으로 이동 + 새롭게 등록된 게시물 번호를 같이 전달 (임시 저장 후 삭제)
         rttr.addFlashAttribute("result", board.getBno());
+
         // 스프링 mvc 내부적으로 response.sendRedirect() 처리
         return "redirect:/board/list";
     }

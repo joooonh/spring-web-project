@@ -3,6 +3,7 @@ package com.example.domain;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class BoardVO {
@@ -14,5 +15,6 @@ public class BoardVO {
     private Date regDate;
     private Date updateDate;
 
-    private int replyCnt;   // 댓글수
+    private int replyCnt;                       // 댓글수
+    private List<BoardAttachVO> attachList;     // 첨부파일
 }
