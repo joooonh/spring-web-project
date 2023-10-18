@@ -163,6 +163,18 @@
             <version>0.4.8</version>
         </dependency>
 
+        <!-- quartz 스케줄링 -->
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>2.3.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz-jobs</artifactId>
+            <version>2.3.2</version>
+        </dependency>
 
     </dependencies>
 
