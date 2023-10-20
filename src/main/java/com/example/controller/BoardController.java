@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -67,11 +68,13 @@ public class BoardController {
     }
 
     @GetMapping("/register")
+    @PreAuthorize("isAuthenticated()")
     public void register() {
 
     }
 
     @PostMapping("/register")
+    @PreAuthorize("isAuthenticated()")
     public String register(BoardVO board, RedirectAttributes rttr) {
 
         log.info("=======================");
@@ -98,6 +101,7 @@ public class BoardController {
         model.addAttribute("board", service.get(bno));
     }
 
+    @PreAuthorize("principal.username == #writer")  // 로그인한 사용자가 작성자인 경우에만 수정
     @PostMapping("/modify")
     public String modify(BoardVO board, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
         log.info("modify: " + board);
@@ -109,8 +113,9 @@ public class BoardController {
         return "redirect:/board/list" + cri.getListLink();
     }
 
+    @PreAuthorize("principal.username == #writer")  // 로그인한 사용자가 작성자인 경우에만 삭제
     @PostMapping("/remove")
-    public String remove(@RequestParam("bno") Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr) {
+    public String remove(@RequestParam("bno") Long bno, @ModelAttribute("cri") Criteria cri, RedirectAttributes rttr, String writer) {
         log.info("remove..." + bno);
 
         List<BoardAttachVO> attachList = service.getAttachList(bno);

@@ -48,11 +48,13 @@ var replyService = (function() {
         });
     }
 
-    // 댓글 삭제
-    function remove(rno, callback, error) {
+    // 댓글 삭제 (댓글 작성자를 같이 전송)
+    function remove(rno, replyer, callback, error) {
         $.ajax({
             type : 'delete',
             url : '/replies/' + rno,
+            data : JSON.stringify({rno:rno, replyer:replyer}),
+            contentType : "application/json; charset=utf-8",
             success: function (deleteResult, status, xhr) {
                 if (callback) {
                     callback(deleteResult);

@@ -9,5 +9,10 @@
 </h1>
 <br/>
 <a href="hello-servlet">Hello Servlet</a>
+
+<script type="text/javascript">
+    self.location="/board/list";
+</script>
+
 </body>
 </html>

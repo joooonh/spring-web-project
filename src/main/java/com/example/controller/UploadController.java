@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
@@ -99,6 +100,7 @@ public class UploadController {
 
     // Ajax를 이용하는 파일 업로드 - 업로드되는 파일 저장
     // ajax 요청에 대해 브라우저로 다시 전송
+    @PreAuthorize("isAuthenticated()")      // 로그인한 사용자만 첨부파일 등록
     @PostMapping(value = "/uploadAjaxAction", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<List<AttachFileDTO>> uploadAjaxPost(MultipartFile[] uploadFile) {
@@ -234,6 +236,8 @@ public class UploadController {
         return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
     }
 
+    // 첨부파일 삭제
+    @PreAuthorize("isAuthenticated()")  // 로그인한 사용자만 첨부파일 삭제
     @PostMapping("/deleteFile")
     @ResponseBody
     public ResponseEntity<String> deleteFile(String fileName, String type) {

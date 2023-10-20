@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/replies/")
@@ -22,6 +23,7 @@ public class ReplyController {
 
     // 댓글 등록 - post 방식으로만 동작, json 데이터만 받음(consumes), 문자열 반환(produces) - "success"
     // @RequestBody - json 데이터를 ReplyVO 타입으로 변환
+    @PreAuthorize("isAuthenticated()")  // 댓글 등록이 로그인한 사용자인지 확인
     @PostMapping(value = "/new", consumes = "application/json", produces = {MediaType.TEXT_PLAIN_VALUE})
     public ResponseEntity<String> create(@RequestBody ReplyVO vo) {
         log.info("ReplyVO: " + vo);
@@ -54,9 +56,11 @@ public class ReplyController {
     }
 
     // 댓글 삭제 - 문자열 반환("success")
-    @DeleteMapping(value = "/{rno}", produces = {MediaType.TEXT_PLAIN_VALUE})
-    public ResponseEntity<String> remove(@PathVariable("rno") Long rno) {
+    @PreAuthorize("principal.username == #vo.replyer")  // 로그인한 사용자와 댓글 작성자가 같은지 확인
+    @DeleteMapping(value = "/{rno}")
+    public ResponseEntity<String> remove(@RequestBody ReplyVO vo, @PathVariable("rno") Long rno) {
         log.info("remove: " + rno);
+        log.info("replyer: " + vo.getReplyer());
 
         return service.remove(rno) == 1
                 ? new ResponseEntity<>("success", HttpStatus.OK)
@@ -64,10 +68,10 @@ public class ReplyController {
     }
 
     // 댓글 수정 - json 형태를 받아서 (consumes), 문자열 반환 (produces)
+    @PreAuthorize("principal.username == #vo.replyer")  // 로그인한 사용자와 댓글 작성자가 같은지 확인
     @RequestMapping(method = {RequestMethod.PUT, RequestMethod.PATCH},
                     value = "/{rno}",
-                    consumes = "application/json",
-                    produces = {MediaType.TEXT_PLAIN_VALUE})
+                    consumes = "application/json")
     public ResponseEntity<String> modify(@RequestBody ReplyVO vo, @PathVariable("rno") Long rno) {
         vo.setRno(rno);
         log.info("rno: " + rno);

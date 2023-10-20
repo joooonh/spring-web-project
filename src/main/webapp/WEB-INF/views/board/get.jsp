@@ -1,15 +1,10 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: joooonh
-  Date: 2023/10/12
-  Time: 5:53 PM
-  To change this template use File | Settings | File Templates.
---%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <%@include file="../includes/header.jsp" %>
+
 <div class = 'bigPictureWrapper'>
     <div class = 'bigPicture'>
     </div>
@@ -93,7 +88,15 @@
                         <label>Writer</label>
                         <input class="form-control" name='writer' value='<c:out value="${board.writer}"/>' readonly="readonly">
                     </div>
-                    <button data-oper="modify" class="btn btn-default" onclick="location.href='/board/modify?bno=<c:out value="${board.bno }"/>'">Modify</button>
+
+                    <!-- 인증된 게시글 작성자만이 수정/삭제 가능 -->
+                    <sec:authentication property="principal" var="pinfo"/>
+                        <sec:authorize access="isAuthenticated()">
+                            <c:if test="${pinfo.username eq board.writer}">
+                                <button data-oper="modify" class="btn btn-default" onclick="location.href='/board/modify?bno=<c:out value="${board.bno }"/>'">Modify</button>
+                            </c:if>
+                        </sec:authorize>
+
                     <button data-oper="list" class="btn btn-info" onclick="location.href='/board/list'">List</button>
 
                     <!-- 버튼 클릭 이벤트 적용을 위한 form -->
@@ -140,7 +143,9 @@
         <div class="panel panel-default">
             <div class="panel-heading">
                 <i class="fa fa-comments fa-fw"></i> Reply
-                <button id="addReplyBtn" class="btn btn-primary btn-xs pull-right">New Reply</button>
+                <sec:authorize access="isAuthenticated()">
+                    <button id="addReplyBtn" class="btn btn-primary btn-xs pull-right">New Reply</button>
+                </sec:authorize>
             </div>
             <!-- /.panel-heading -->
             <div class="panel-body">
@@ -313,15 +318,34 @@ $(document).ready(function() {
     var modalRemoveBtn = $("#modalRemoveBtn");
     var modalRegisterBtn = $("#modalRegisterBtn");
 
+    // 스프링 시큐리티 적용 - 현재 로그인한 사용자를 댓글 작성자로 되도록 설정
+    var replyer = null;
+
+    <sec:authorize access="isAuthenticated()">
+        replyer = '<sec:authentication property="principal.username"/>';
+    </sec:authorize>
+
+    // 스프링 시큐리티 - post, put, patch, delte 시 반드시 csrf 토큰 전달해야 함
+    // 댓글은 ajax로 전송하므로 여기서 csrf 같이 전송
+    var csrfHeaderName = "${_csrf.headerName}";
+    var csrfTokenValue = "${_csrf.token}";
+
     // 댓글 추가 버튼 클릭 이벤트
     $("#addReplyBtn").on("click", function (e) {
         modal.find("input").val("");                        // 입력 필드 비우기
+        modal.find("input[name='replyer']").val(replyer);   // 현재 로그인한 사용자가 댓글 작성자
         modalInputReplyDate.closest("div").hide();          // 필요 없는 항목들 숨기기
         modal.find("button[id != 'modalCloseBtn']").hide(); // 닫기 버튼 외의 버튼 숨기기
 
         modalRegisterBtn.show();
 
         $(".modal").modal("show");
+    });
+
+    // 스프링 시큐리티 - ajax로 댓글 등록 시 csrf 토큰 적용 (beforeSend 말고 기본 설정으로 지정)
+    // ajaxSend() - 모든 ajax 전송 시 csrf 토큰 같이 전송하도록 세팅
+    $(document).ajaxSend(function (e, xhr, options) {
+        xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
     });
 
     // 댓글 추가 이벤트
@@ -368,14 +392,28 @@ $(document).ready(function() {
     // 특정 댓글 수정 이벤트
     modalModBtn.on("click", function (e) {
 
-        var reply = {rno:modal.data("rno"), reply:modalInputReply.val()};
+        var originalReplyer = modalInputReplyer.val();      // 댓글의 원래 작성자
+        var reply = {
+            rno:modal.data("rno"),
+            reply:modalInputReply.val(),
+            replyer:originalReplyer};
+
+        if (!replyer) {
+            alert("로그인 후 수정이 가능합니다.");
+            modal.modal("hide");
+            return;
+        }
+        console.log("Original Replyer: " + originalReplyer);
+        if (replyer != originalReplyer) {
+            alert("자신이 작성한 댓글만 삭제가 가능합니다.");
+            modal.modal("hide");
+            return;
+        }
 
         replyService.update(reply, function (result) {
-
             alert(result);
             modal.modal("hide");
             showList(pageNum);
-
         });
     });
 
@@ -384,12 +422,28 @@ $(document).ready(function() {
 
         var rno = modal.data("rno");
 
-        replyService.remove(rno, function (result) {
+        console.log("RNO: " + rno);
+        console.log("REPLYER: " + replyer);
 
+        // 댓글 삭제 시 로그인한 사용자가 작성한 댓글만 삭제 가능
+
+        if (!replyer) {
+            alert("로그인 후 삭제가 가능합니다.");
+            modal.modal("hide");
+            return;
+        }
+        var originalReplyer = modalInputReplyer.val();      // 댓글의 원래 작성자
+        console.log("original Replyer: " + originalReplyer);
+        if (replyer != originalReplyer) {
+            alert("자신이 작성한 댓글만 삭제가 가능합니다.");
+            modal.modal("hide");
+            return;
+        }
+
+        replyService.remove(rno, originalReplyer, function (result) {
             alert(result);
             modal.modal("hide");
             showList(pageNum);
-
         });
     });
 

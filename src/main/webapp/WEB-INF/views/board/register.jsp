@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <%@include file="../includes/header.jsp" %>
 
@@ -70,6 +71,7 @@
             <!-- /.panel-heading -->
             <div class="panel-body">
                 <form role="form" action="/board/register" method="post">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">   <!-- 스프링 시큐리티 post 방식은 반드시 csrf 토큰 사용 -->
                     <div class="form-group">
                         <label>Title</label>
                         <input class="form-control" name='title'>
@@ -80,7 +82,7 @@
                     </div>
                     <div class="form-group">
                         <label>Writer</label>
-                        <input class="form-control" name='writer'>
+                        <input class="form-control" name='writer' value="<sec:authentication property='principal.username'/>" readonly="readonly">
                     </div>
                     <button type="submit" class="btn btn-default">Submit Button</button>
                     <button type="reset" class="btn btn-default">Reset Button</button>
@@ -123,6 +125,41 @@
 
 <script>
 $(document).ready(function (e) {
+
+    // 스프링 시큐리티 - post, put, patch, delte 시 반드시 csrf 토큰 전달해야 함
+    // 첨부파일은 ajax로 전송하므로 여기서 csrf 같이 전송
+    var csrfHeaderName = "${_csrf.headerName}";
+    var csrfTokenValue = "${_csrf.token}";
+
+    $("input[type='file']").change(function (e) {
+        var formData = new FormData();
+        var inputFile = $("input[name='uploadFile']");
+        var files = inputFile[0].files;
+
+        for (var i = 0; i < files.length; i++) {
+
+            if (!checkExtension(files[i].name, files[i].size)) {
+                return false;
+            }
+            formData.append("uploadFile", files[i]);
+        }
+
+        $.ajax({
+            url: '/uploadAjaxAction',
+            processData: false,         // default contentType에 맞춰 데이터를 쿼리스트링으로 처리할지 여부 (반드시 false)
+            contentType: false,         // 서버로 보낼 (반드시 false)
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);   // ajax를 보낼 때 csrf 토큰을 같이 전송
+            },
+            data: formData,
+            type: 'POST',
+            dataType: 'json',           // 서버한테 받고 싶은
+            success: function (result) {
+                console.log(result);
+                showUploadResult(result);   // 업로드 처리 결과 함수
+            },
+        })
+    });
 
     // 파일 업로드는 버튼 클릭하지 않고, 내용 변경되는 것 감지해서 처리
     // 파일 확장자와 크기 처리 함수
@@ -267,6 +304,9 @@ $(document).ready(function (e) {
         $.ajax({
             url: '/deleteFile',
             data: {fileName:targetFile, type:type},
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);
+            },
             dataType: 'text',
             type: 'POST',
             success: function (result) {

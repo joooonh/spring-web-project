@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
 <%@include file="../includes/header.jsp" %>
 <div class = 'bigPictureWrapper'>
@@ -72,6 +73,7 @@
                     <input type="hidden" name="amount" value="<c:out value="${cri.amount}"/>">
                     <input type="hidden" name="type" value="<c:out value="${cri.type}"/>">
                     <input type="hidden" name="keyword" value="<c:out value="${cri.keyword}"/>">
+                    <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
 
                     <div class="form-group">
                         <label>Bno</label>
@@ -98,8 +100,14 @@
                         <input class="form-control" name='updateDate' value='<fmt:formatDate pattern="yyyy/MM/dd" value="${board.updateDate}"/>' readonly="readonly">
                     </div>
 
-                    <button type="submit" data-oper="modify" class="btn btn-default">Modify</button>
-                    <button type="submit" data-oper="remove" class="btn btn-danger">Remove</button>
+                    <!-- 인증된 게시글 작성자만이 수정/삭제 가능 -->
+                    <sec:authentication property="principal" var="pinfo"/>
+                    <sec:authorize access="isAuthenticated()">
+                        <c:if test="${pinfo.username eq board.writer}">
+                            <button type="submit" data-oper="modify" class="btn btn-default">Modify</button>
+                            <button type="submit" data-oper="remove" class="btn btn-danger">Remove</button>
+                        </c:if>
+                    </sec:authorize>
                     <button type="submit" data-oper="list" class="btn btn-info">List</button>
                 </form>
 
@@ -197,6 +205,11 @@
             return true;
         }
 
+        // 스프링 시큐리티 - post, put, patch, delte 시 반드시 csrf 토큰 전달해야 함
+        // 첨부파일은 ajax로 전송하므로 여기서 csrf 같이 전송
+        var csrfHeaderName = "${_csrf.headerName}";
+        var csrfTokenValue = "${_csrf.token}";
+
         // 첨부파일 추가 이벤트
         $("input[type='file']").change(function (e) {
 
@@ -212,7 +225,6 @@
                 if (!checkExtension(files[i].name, files[i].size)) {
                     return false;
                 }
-
                 formData.append("uploadFile", files[i]);
             }
 
@@ -223,10 +235,12 @@
                 contentType : false,      // 서버로 보낼 (반드시 false)
                 data : formData,
                 type : 'POST',
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader(csrfHeaderName, csrfTokenValue);   // ajax를 보낼 때 csrf 토큰을 같이 전송
+                },
                 dataType : 'json',        // 서버한테 받고 싶은
                 success: function (result) {
                     console.log(result);
-
                     // 업로드된 파일 결과 처리 함수
                     showUploadResult(result);
                 }
